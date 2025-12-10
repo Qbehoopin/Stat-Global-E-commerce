@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - STAT GLOBAL{% endblock %}
+
+{% block content %}
+<div class="product-detail-page">
+    <div class="product-detail-container">
+        <div class="product-images">
+            {% if product.image_url %}
+                <img src="{{ product.image_url }}" alt="{{ product.name }}" class="main-product-image">
+            {% else %}
+                <div class="product-placeholder large"></div>
+            {% endif %}
+        </div>
+
+        <div class="product-details">
+            <h1 class="product-title">{{ product.name }}</h1>
+            <div class="product-price-large">
+                {% if product.compare_at_price %}
+                    <span class="price-original">${{ "%.2f"|format(product.compare_at_price) }}</span>
+                    <span class="price-sale">${{ "%.2f"|format(product.price) }}</span>
+                {% else %}
+                    <span class="price">${{ "%.2f"|format(product.price) }}</span>
+                {% endif %}
+            </div>
+
+            {% if product.description %}
+            <div class="product-description">
+                <p>{{ product.description }}</p>
+            </div>
+            {% endif %}
+
+            <div class="product-meta">
+                {% if product.sku %}
+                <p><strong>SKU:</strong> {{ product.sku }}</p>
+                {% endif %}
+                <p><strong>Availability:</strong> 
+                    {% if product.inventory > 0 %}
+                        <span class="in-stock">In Stock ({{ product.inventory }} available)</span>
+                    {% else %}
+                        <span class="out-of-stock">Out of Stock</span>
+                    {% endif %}
+                </p>
+            </div>
+
+            {% if user.is_authenticated %}
+            <form method="POST" action="{{ url_for('views.add_to_cart') }}" class="add-to-cart-form">
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <div class="quantity-selector">
+                    <label for="quantity">Quantity:</label>
+                    <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ product.inventory if product.inventory > 0 else 1 }}">
+                </div>
+                <button type="submit" class="btn btn-primary btn-large" {% if product.inventory == 0 %}disabled{% endif %}>
+                    {% if product.inventory > 0 %}Add to Cart{% else %}Out of Stock{% endif %}
+                </button>
+            </form>
+            {% else %}
+            <p><a href="{{ url_for('auth.login') }}">Login</a> to add items to cart.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if related_products %}
+    <section class="related-products">
+        <h2>You May Also Like</h2>
+        <div class="products-grid">
+            {% for related in related_products %}
+            <div class="product-card">
+                <a href="{{ url_for('views.product_detail', slug=related.slug) }}">
+                    {% if related.image_url %}
+                        <img src="{{ related.image_url }}" alt="{{ related.name }}" class="product-image">
+                    {% else %}
+                        <div class="product-placeholder"></div>
+                    {% endif %}
+                    <div class="product-info">
+                        <h3 class="product-name">{{ related.name }}</h3>
+                        <div class="product-price">
+                            <span class="price">${{ "%.2f"|format(related.price) }}</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}STAT GLOBAL - Premium Clothing{% endblock %}
+
+{% block content %}
+<section class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">Elevate Your Style</h1>
+        <p class="hero-subtitle">Discover premium clothing crafted for the modern lifestyle</p>
+        <a href="{{ url_for('views.products') }}" class="btn btn-primary">Shop Now</a>
+    </div>
+</section>
+
+{% if categories %}
+<section class="categories-section">
+    <h2 class="section-title">Shop by Category</h2>
+    <div class="categories-grid">
+        {% for category in categories %}
+        <a href="{{ url_for('views.products', category=category.id) }}" class="category-card">
+            {% if category.image_url %}
+                <img src="{{ category.image_url }}" alt="{{ category.name }}">
+            {% else %}
+                <div class="category-placeholder"></div>
+            {% endif %}
+            <h3>{{ category.name }}</h3>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if featured_products %}
+<section class="featured-section">
+    <h2 class="section-title">Featured Products</h2>
+    <div class="products-grid">
+        {% for product in featured_products %}
+        <div class="product-card">
+            <a href="{{ url_for('views.product_detail', slug=product.slug) }}">
+                {% if product.image_url %}
+                    <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-image">
+                {% else %}
+                    <div class="product-placeholder"></div>
+                {% endif %}
+                <div class="product-info">
+                    <h3 class="product-name">{{ product.name }}</h3>
+                    <div class="product-price">
+                        {% if product.compare_at_price %}
+                            <span class="price-original">${{ "%.2f"|format(product.compare_at_price) }}</span>
+                            <span class="price-sale">${{ "%.2f"|format(product.price) }}</span>
+                        {% else %}
+                            <span class="price">${{ "%.2f"|format(product.price) }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="section-cta">
+        <a href="{{ url_for('views.products') }}" class="btn btn-secondary">View All Products</a>
+    </div>
+</section>
+{% endif %}
+
+<section class="about-section">
+    <div class="about-content">
+        <h2>About STAT GLOBAL</h2>
+        <p>We believe in creating timeless pieces that blend quality craftsmanship with contemporary design. Our collections are inspired by the natural world, featuring earth tones and sustainable materials.</p>
+    </div>
+</section>
+{% endblock %}
+

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Order Confirmation - STAT GLOBAL{% endblock %}
+
+{% block content %}
+<div class="order-confirmation-page">
+    <div class="confirmation-container">
+        <div class="confirmation-icon">✓</div>
+        <h1>Order Confirmed!</h1>
+        <p class="order-number">Order #: {{ order.order_number }}</p>
+        <p>Thank you for your purchase. We'll send you a confirmation email shortly.</p>
+
+        <div class="order-details">
+            <h2>Order Details</h2>
+            <div class="detail-row">
+                <span>Order Number:</span>
+                <span>{{ order.order_number }}</span>
+            </div>
+            <div class="detail-row">
+                <span>Total Amount:</span>
+                <span>${{ "%.2f"|format(order.total_amount) }}</span>
+            </div>
+            <div class="detail-row">
+                <span>Status:</span>
+                <span class="status-badge status-{{ order.status }}">{{ order.status|title }}</span>
+            </div>
+            <div class="detail-row">
+                <span>Date:</span>
+                <span>{{ order.date_created.strftime('%B %d, %Y') }}</span>
+            </div>
+        </div>
+
+        <div class="order-items-summary">
+            <h3>Items Ordered</h3>
+            {% for item in order.items %}
+            <div class="order-item-summary">
+                <span>{{ item.product.name }} × {{ item.quantity }}</span>
+                <span>${{ "%.2f"|format(item.price * item.quantity) }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="confirmation-actions">
+            <a href="{{ url_for('views.orders') }}" class="btn btn-primary">View All Orders</a>
+            <a href="{{ url_for('views.products') }}" class="btn btn-secondary">Continue Shopping</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

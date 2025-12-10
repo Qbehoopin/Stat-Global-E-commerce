@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Orders - STAT GLOBAL{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-header">
+        <h1>All Orders</h1>
+    </div>
+
+    {% if orders %}
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Payment Status</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.order_number }}</td>
+                <td>{{ order.user.first_name }} {{ order.user.last_name }}</td>
+                <td>${{ "%.2f"|format(order.total_amount) }}</td>
+                <td><span class="status-badge status-{{ order.status }}">{{ order.status|title }}</span></td>
+                <td><span class="status-badge status-{{ order.payment_status }}">{{ order.payment_status|title }}</span></td>
+                <td>{{ order.date_created.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td><a href="{{ url_for('admin.order_detail', order_id=order.id) }}" class="btn btn-small">View</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No orders yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
