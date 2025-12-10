@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACCESS RESTRICTED | STAT GLOBAL</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+</head>
+<body>
+    <div class="landing-container">
+        <div class="landing-content">
+            <h1 class="headline">ACCESS RESTRICTED GLOBAL ONES ONLY.</h1>
+            <p class="subheadline">STAT GLOBAL private drop. Reserved for Gloabal Ones only.</p>
+            
+            <form method="POST" action="{{ url_for('views.landing') }}" class="access-form" id="accessForm">
+                <div class="password-input-wrapper">
+                    <input 
+                        type="password" 
+                        name="access_code" 
+                        id="access_code" 
+                        class="password-input" 
+                        placeholder="Enter access code"
+                        autocomplete="off"
+                        required
+                        autofocus
+                    >
+                    <div class="input-underline"></div>
+                </div>
+                <p class="access-hint">Enter your access code. Unauthorized users will be denied.</p>
+                <button type="submit" class="access-btn">ENTER</button>
+            </form>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <button class="waitlist-toggle" id="waitlistToggle">Join Waitlist</button>
+
+            <div class="waitlist-form-container" id="waitlistForm">
+                <form id="waitlistFormElement">
+                    <h3>Join the Waitlist</h3>
+                    <div class="form-group">
+                        <input type="text" name="name" placeholder="Name" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" name="email" placeholder="Email" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="tel" name="phone" placeholder="Phone Number">
+                    </div>
+                    <div class="form-group">
+                        <select name="preferred_size">
+                            <option value="">Preferred Size</option>
+                            <option value="XS">XS</option>
+                            <option value="S">S</option>
+                            <option value="M">M</option>
+                            <option value="L">L</option>
+                            <option value="XL">XL</option>
+                            <option value="XXL">XXL</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="submit-btn">SUBMIT</button>
+                    <div id="waitlistMessage"></div>
+                </form>
+            </div>
+
+            <p class="waitlist-benefits">Early access members receive priority shipping, first access to unreleased pieces, and insider pricing.</p>
+        </div>
+    </div>
+
+    <footer class="landing-footer">
+        <p>© STAT GLOBAL L.L.C. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        // Waitlist form toggle
+        const waitlistToggle = document.getElementById('waitlistToggle');
+        const waitlistForm = document.getElementById('waitlistForm');
+        const waitlistFormElement = document.getElementById('waitlistFormElement');
+        const waitlistMessage = document.getElementById('waitlistMessage');
+
+        waitlistToggle.addEventListener('click', function() {
+            waitlistForm.style.display = waitlistForm.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Waitlist form submission
+        waitlistFormElement.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(waitlistFormElement);
+            
+            try {
+                const response = await fetch('{{ url_for("views.join_waitlist") }}', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    waitlistMessage.innerHTML = '<p class="success-message">' + result.message + '</p>';
+                    waitlistFormElement.reset();
+                    setTimeout(() => {
+                        waitlistForm.style.display = 'none';
+                        waitlistMessage.innerHTML = '';
+                    }, 3000);
+                } else {
+                    waitlistMessage.innerHTML = '<p class="error-message">' + result.message + '</p>';
+                }
+            } catch (error) {
+                waitlistMessage.innerHTML = '<p class="error-message">An error occurred. Please try again.</p>';
+            }
+        });
+
+        // Password input animation
+        const passwordInput = document.getElementById('access_code');
+        const inputUnderline = document.querySelector('.input-underline');
+
+        passwordInput.addEventListener('focus', function() {
+            inputUnderline.classList.add('active');
+        });
+
+        passwordInput.addEventListener('blur', function() {
+            if (!this.value) {
+                inputUnderline.classList.remove('active');
+            }
+        });
+
+        passwordInput.addEventListener('input', function() {
+            if (this.value) {
+                inputUnderline.classList.add('active');
+            } else {
+                inputUnderline.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
+

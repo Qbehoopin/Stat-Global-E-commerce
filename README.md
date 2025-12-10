@@ -5,6 +5,8 @@ A modern, full-featured e-commerce platform built with Flask, inspired by Shopif
 ## Features
 
 ### Customer Features
+- **Password-Protected Landing Page**: Exclusive access control with minimalist, elite design
+- **Waitlist System**: Join waitlist for early access to new drops
 - **Product Catalog**: Browse products by category with search and sorting
 - **Product Details**: Detailed product pages with images and descriptions
 - **Shopping Cart**: Add, update, and remove items from cart
@@ -56,6 +58,10 @@ python main.py
 
 The application will start on `http://127.0.0.1:5000` (or `http://localhost:5000`)
 
+**Note:** On first visit, you'll be redirected to the password-protected landing page. Enter the access code to unlock the site.
+
+**Default Access Code:** `STAT2024` (can be changed in `website/__init__.py`)
+
 ### Step 4: Create Your First Admin User
 
 1. First, register a regular account through the website at `/sign-up`
@@ -89,6 +95,55 @@ python create_admin.py
 2. Navigate to `/admin` to access the admin dashboard
 3. Start adding products and categories!
 
+**Note:** Admin users automatically have access to the site and bypass the landing page password requirement.
+
+## Landing Page & Access Control
+
+### Password-Protected Landing Page
+
+STAT GLOBAL features an exclusive, password-protected landing page that creates a sense of exclusivity and builds hype before launch.
+
+**Features:**
+- Minimalist black/white design with cinematic aesthetics
+- Password input with animated glow effect
+- Waitlist signup form for non-members
+- Session-based access control
+- Admin users automatically bypass the landing page
+
+### Access Code
+
+**Default Access Code:** `STAT2024`
+
+To change the access code, edit `website/__init__.py`:
+```python
+LANDING_ACCESS_CODE = "YOUR_NEW_CODE"
+```
+
+### How It Works
+
+1. **First Visit**: Users are redirected to `/landing` page
+2. **Enter Access Code**: Users must enter the correct access code
+3. **Session Storage**: Access is stored in the session for the duration of the browser session
+4. **Waitlist Option**: Non-members can join the waitlist by clicking "Join Waitlist"
+5. **Admin Bypass**: Admin users automatically have access to all pages
+
+### Waitlist System
+
+The waitlist allows potential customers to sign up for early access:
+- Collects: Name, Email, Phone Number, Preferred Size
+- Prevents duplicate email entries
+- Stores data in the `Waitlist` database model
+- Can be viewed/managed through the admin panel (future feature)
+
+### Landing Page Design
+
+The landing page features:
+- **Headline**: "ACCESS RESTRICTED GLOBAL ONES ONLY."
+- **Subheadline**: "STAT GLOBAL private drop. Reserved for Global Ones only."
+- **Aesthetic**: Black background, white text, sharp typography
+- **Animations**: Smooth fade-ins, glowing password input underline
+- **Minimalist Footer**: "© STAT GLOBAL L.L.C. All Rights Reserved."
+
 ## Project Structure
 
 ```
@@ -112,6 +167,7 @@ Stat-Global-E-commerce/
 │   │   ├── auth/
 │   │   │   ├── login.html
 │   │   │   └── signup.html
+│   │   ├── landing.html    # Password-protected landing page  STAT2024
 │   │   └── admin/
 │   │       ├── dashboard.html
 │   │       ├── products.html
@@ -119,7 +175,8 @@ Stat-Global-E-commerce/
 │   │       └── orders.html
 │   └── static/
 │       └── css/
-│           └── styles.css  # Earth-tone styling
+│           ├── styles.css      # Earth-tone styling
+│           └── landing.css     # Landing page minimalist design
 └── stat_global.db         # SQLite database (created automatically)
 ```
 
@@ -132,6 +189,7 @@ Stat-Global-E-commerce/
 - **Order**: Customer orders
 - **OrderItem**: Individual items in orders
 - **ProductVariant**: Product variants (size, color, etc.)
+- **Waitlist**: Waitlist entries for early access members
 
 ## Design Philosophy
 
@@ -145,9 +203,12 @@ The design uses an **earth-tone color palette**:
 ## Key Routes
 
 ### Customer Routes
-- `/` - Homepage
-- `/products` - Product catalog
-- `/product/<slug>` - Product detail page
+- `/` - Homepage (requires access code or admin login)
+- `/landing` - Password-protected landing page
+- `/join-waitlist` - API endpoint for waitlist signup
+- `/logout-access` - Clear landing page access session
+- `/products` - Product catalog (requires access)
+- `/product/<slug>` - Product detail page (requires access)
 - `/cart` - Shopping cart
 - `/checkout` - Checkout process
 - `/orders` - Order history
@@ -179,10 +240,13 @@ The design uses an **earth-tone color palette**:
 ## Security Notes
 
 - Change the `SECRET_KEY` in `website/__init__.py` for production
-- Use environment variables for sensitive configuration
+- Change the `LANDING_ACCESS_CODE` in `website/__init__.py` for production
+- Use environment variables for sensitive configuration (access codes, API keys)
 - Implement HTTPS in production
-- Add rate limiting for API endpoints
+- Add rate limiting for API endpoints (especially `/join-waitlist`)
 - Use a production-grade database (PostgreSQL) instead of SQLite
+- Consider implementing IP-based access restrictions for the landing page
+- Session-based access control expires when browser closes (by design)
 
 ## Troubleshooting
 
@@ -197,6 +261,16 @@ The design uses an **earth-tone color palette**:
 **Images not showing?**
 - Use full URLs for product images (e.g., `https://example.com/image.jpg`)
 - Or implement file upload functionality for local storage
+
+**Can't access the site after entering access code?**
+- Make sure cookies/sessions are enabled in your browser
+- Try clearing your browser cache and cookies
+- The access code is case-sensitive: `STAT2024`
+- Admin users automatically have access - log in with admin credentials to bypass
+
+**Want to disable the landing page?**
+- Comment out the access check in `website/views.py` in the `home()` function
+- Or set `session['has_landing_access'] = True` by default
 
 ## License
 

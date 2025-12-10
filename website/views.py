@@ -1,14 +1,25 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
+from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, session
 from flask_login import login_required, current_user
 from . import db
-from .models import Product, Category, CartItem, Order, OrderItem, ProductVariant
+from .models import Product, Category, CartItem, Order, OrderItem, ProductVariant, Waitlist
 from datetime import datetime
 import uuid
 
 views = Blueprint('views', __name__)
 
+def check_access():
+    """Check if user has access to the site"""
+    has_access = session.get('has_landing_access', False)
+    if current_user.is_authenticated and current_user.is_admin:
+        return True
+    return has_access
+
 @views.route('/')
 def home():
+    # Check if user has access (either logged in as admin or has entered access code)
+    if not check_access():
+        return redirect(url_for('views.landing'))
+    
     featured_products = Product.query.filter_by(is_featured=True, is_active=True).limit(8).all()
     categories = Category.query.all()
     return render_template('home.html', 
@@ -16,8 +27,68 @@ def home():
                          categories=categories,
                          user=current_user)
 
+@views.route('/landing', methods=['GET', 'POST'])
+def landing():
+    from . import LANDING_ACCESS_CODE
+    
+    if request.method == 'POST':
+        access_code = request.form.get('access_code', '').strip()
+        
+        if access_code == LANDING_ACCESS_CODE:
+            session['has_landing_access'] = True
+            return redirect(url_for('views.home'))
+        else:
+            flash('Invalid access code. Access denied.', category='error')
+    
+    return render_template('landing.html', user=current_user)
+
+@views.route('/join-waitlist', methods=['POST'])
+def join_waitlist():
+    try:
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        phone = request.form.get('phone', '').strip()
+        preferred_size = request.form.get('preferred_size', '').strip()
+        
+        if not name or not email:
+            return jsonify({'success': False, 'message': 'Name and email are required.'}), 400
+        
+        # Check if email already exists
+        existing = Waitlist.query.filter_by(email=email).first()
+        if existing:
+            return jsonify({'success': False, 'message': 'You are already on the waitlist.'}), 400
+        
+        waitlist_entry = Waitlist(
+            name=name,
+            email=email,
+            phone=phone if phone else None,
+            preferred_size=preferred_size if preferred_size else None
+        )
+        
+        db.session.add(waitlist_entry)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Successfully joined the waitlist!'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': 'An error occurred. Please try again.'}), 500
+
+@views.route('/logout-access')
+def logout_access():
+    session.pop('has_landing_access', None)
+    return redirect(url_for('views.landing'))
+
+def check_access():
+    """Check if user has access to the site"""
+    has_access = session.get('has_landing_access', False)
+    if current_user.is_authenticated and current_user.is_admin:
+        return True
+    return has_access
+
 @views.route('/products')
 def products():
+    if not check_access():
+        return redirect(url_for('views.landing'))
+    
     category_id = request.args.get('category', type=int)
     search = request.args.get('search', '')
     sort = request.args.get('sort', 'newest')  # newest, price_low, price_high, name
@@ -53,6 +124,9 @@ def products():
 
 @views.route('/product/<slug>')
 def product_detail(slug):
+    if not check_access():
+        return redirect(url_for('views.landing'))
+    
     product = Product.query.filter_by(slug=slug, is_active=True).first_or_404()
     related_products = Product.query.filter_by(
         category_id=product.category_id, 

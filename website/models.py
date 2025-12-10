@@ -101,3 +101,12 @@ class OrderItem(db.Model):
     product = relationship('Product', back_populates='order_items')
     variant = relationship('ProductVariant')
 
+class Waitlist(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False)
+    email = db.Column(db.String(150), nullable=False)
+    phone = db.Column(db.String(20))
+    preferred_size = db.Column(db.String(20))
+    date_joined = db.Column(db.DateTime, default=datetime.utcnow)
+    access_granted = db.Column(db.Boolean, default=False)
+

@@ -12,6 +12,9 @@ ADMIN_PASSWORD = "Password123"
 ADMIN_FIRST_NAME = "STAT"
 ADMIN_LAST_NAME = "GLOBAL"
 
+# Landing page access code (change this to your desired password)
+LANDING_ACCESS_CODE = "STAT2024"
+
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'stat-global-secret-key-2024'
