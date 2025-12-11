@@ -52,6 +52,8 @@ def create_app():
     
     # Create database tables and default admin account
     with app.app_context():
+        from .models import Category
+        
         db.create_all()
         
         # Create default admin account if it doesn't exist
@@ -67,6 +69,45 @@ def create_app():
             db.session.add(admin_user)
             db.session.commit()
             print(f"✓ Default admin account created: {ADMIN_EMAIL}")
+        
+        # Create default categories structure
+        try:
+            categories_structure = {
+                'Mensware': ['Shirts', 'Hoodies', 'Hats', 'Artwork', 'Exclusive Catalog'],
+                'Womensware': ['Shirts', 'Hoodies', 'Hats', 'Artwork', 'Exclusive Catalog'],
+                'Global Babies/Kids': ['Shirts', 'Hoodies', 'Hats', 'Artwork', 'Exclusive Catalog']
+            }
+            
+            for parent_name, subcategories in categories_structure.items():
+                parent_category = Category.query.filter_by(name=parent_name).first()
+                if not parent_category:
+                    parent_slug = parent_name.lower().replace(' ', '-').replace('/', '-')
+                    parent_category = Category(
+                        name=parent_name,
+                        slug=parent_slug,
+                        description=f"{parent_name} collection"
+                    )
+                    db.session.add(parent_category)
+                    db.session.flush()  # Get the ID
+                
+                # Create subcategories
+                for subcat_name in subcategories:
+                    subcat_slug = f"{parent_category.slug}-{subcat_name.lower().replace(' ', '-')}"
+                    existing_subcat = Category.query.filter_by(slug=subcat_slug).first()
+                    if not existing_subcat:
+                        subcategory = Category(
+                            name=f"{parent_name} - {subcat_name}",
+                            slug=subcat_slug,
+                            description=f"{subcat_name} in {parent_name}",
+                            parent_id=parent_category.id
+                        )
+                        db.session.add(subcategory)
+            
+            db.session.commit()
+            print("OK: Default categories structure created")
+        except Exception as e:
+            print(f"Warning: Could not create default categories. Error: {e}")
+            db.session.rollback()
     
     return app
 

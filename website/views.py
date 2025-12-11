@@ -1,9 +1,10 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, session
 from flask_login import login_required, current_user
 from . import db
-from .models import Product, Category, CartItem, Order, OrderItem, ProductVariant, Waitlist
+from .models import Product, Category, CartItem, Order, OrderItem, ProductVariant, Waitlist, WishlistItem
 from datetime import datetime
 import uuid
+import json
 
 views = Blueprint('views', __name__)
 
@@ -133,9 +134,25 @@ def product_detail(slug):
         is_active=True
     ).filter(Product.id != product.id).limit(4).all()
     
+    # Parse product images JSON
+    product_images = []
+    if product.images:
+        try:
+            product_images = json.loads(product.images)
+        except:
+            product_images = []
+    
+    # Check if product is in user's wishlist
+    in_wishlist = False
+    if current_user.is_authenticated:
+        wishlist_item = WishlistItem.query.filter_by(user_id=current_user.id, product_id=product.id).first()
+        in_wishlist = wishlist_item is not None
+    
     return render_template('product_detail.html', 
                          product=product, 
                          related_products=related_products,
+                         product_images=product_images,
+                         in_wishlist=in_wishlist,
                          user=current_user)
 
 @views.route('/cart')
@@ -279,4 +296,53 @@ def order_confirmation(order_id):
 def orders():
     user_orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.date_created.desc()).all()
     return render_template('orders.html', orders=user_orders, user=current_user)
+
+@views.route('/wishlist')
+@login_required
+def wishlist():
+    if not check_access():
+        flash('You need access to view the wishlist.', category='error')
+        return redirect(url_for('views.landing'))
+    
+    wishlist_items = WishlistItem.query.filter_by(user_id=current_user.id).order_by(WishlistItem.date_added.desc()).all()
+    return render_template('wishlist.html', wishlist_items=wishlist_items, user=current_user)
+
+@views.route('/add-to-wishlist', methods=['POST'])
+@login_required
+def add_to_wishlist():
+    if not check_access():
+        flash('You need access to add items to wishlist.', category='error')
+        return redirect(url_for('views.landing'))
+    
+    product_id = request.form.get('product_id')
+    product = Product.query.get_or_404(product_id)
+    
+    # Check if already in wishlist
+    existing = WishlistItem.query.filter_by(user_id=current_user.id, product_id=product_id).first()
+    if existing:
+        flash('Product is already in your wishlist!', category='info')
+        return redirect(request.referrer or url_for('views.wishlist'))
+    
+    wishlist_item = WishlistItem(
+        user_id=current_user.id,
+        product_id=product_id
+    )
+    db.session.add(wishlist_item)
+    db.session.commit()
+    flash('Added to wishlist!', category='success')
+    return redirect(request.referrer or url_for('views.wishlist'))
+
+@views.route('/remove-from-wishlist/<int:wishlist_item_id>')
+@login_required
+def remove_from_wishlist(wishlist_item_id):
+    wishlist_item = WishlistItem.query.get_or_404(wishlist_item_id)
+    
+    if wishlist_item.user_id != current_user.id:
+        flash('Unauthorized action.', category='error')
+        return redirect(url_for('views.wishlist'))
+    
+    db.session.delete(wishlist_item)
+    db.session.commit()
+    flash('Removed from wishlist.', category='success')
+    return redirect(url_for('views.wishlist'))
 

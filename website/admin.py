@@ -59,6 +59,32 @@ def add_product():
         image_url = request.form.get('image_url')
         is_featured = request.form.get('is_featured') == 'on'
         
+        # New product detail fields
+        shipping_details = request.form.get('shipping_details')
+        size_chart = request.form.get('size_chart')
+        colorway = request.form.get('colorway')
+        model_details = request.form.get('model_details')
+        fabric_type = request.form.get('fabric_type')
+        product_details = request.form.get('product_details')
+        
+        # Handle multiple images (on body, on ground, photoshoot)
+        images_list = []
+        on_body_image = request.form.get('on_body_image', '').strip()
+        on_ground_image = request.form.get('on_ground_image', '').strip()
+        photoshoot_image = request.form.get('photoshoot_image', '').strip()
+        additional_image = request.form.get('additional_image', '').strip()
+        
+        if on_body_image:
+            images_list.append({'type': 'on_body', 'url': on_body_image})
+        if on_ground_image:
+            images_list.append({'type': 'on_ground', 'url': on_ground_image})
+        if photoshoot_image:
+            images_list.append({'type': 'photoshoot', 'url': photoshoot_image})
+        if additional_image:
+            images_list.append({'type': 'additional', 'url': additional_image})
+        
+        images_json = json.dumps(images_list) if images_list else None
+        
         product = Product(
             name=name,
             slug=slug,
@@ -69,7 +95,14 @@ def add_product():
             inventory=inventory,
             category_id=category_id,
             image_url=image_url,
-            is_featured=is_featured
+            images=images_json,
+            is_featured=is_featured,
+            shipping_details=shipping_details if shipping_details else None,
+            size_chart=size_chart if size_chart else None,
+            colorway=colorway if colorway else None,
+            model_details=model_details if model_details else None,
+            fabric_type=fabric_type if fabric_type else None,
+            product_details=product_details if product_details else None
         )
         
         db.session.add(product)
@@ -99,12 +132,46 @@ def edit_product(product_id):
         product.is_featured = request.form.get('is_featured') == 'on'
         product.is_active = request.form.get('is_active') == 'on'
         
+        # Update new product detail fields
+        product.shipping_details = request.form.get('shipping_details') or None
+        product.size_chart = request.form.get('size_chart') or None
+        product.colorway = request.form.get('colorway') or None
+        product.model_details = request.form.get('model_details') or None
+        product.fabric_type = request.form.get('fabric_type') or None
+        product.product_details = request.form.get('product_details') or None
+        
+        # Handle multiple images
+        images_list = []
+        on_body_image = request.form.get('on_body_image', '').strip()
+        on_ground_image = request.form.get('on_ground_image', '').strip()
+        photoshoot_image = request.form.get('photoshoot_image', '').strip()
+        additional_image = request.form.get('additional_image', '').strip()
+        
+        if on_body_image:
+            images_list.append({'type': 'on_body', 'url': on_body_image})
+        if on_ground_image:
+            images_list.append({'type': 'on_ground', 'url': on_ground_image})
+        if photoshoot_image:
+            images_list.append({'type': 'photoshoot', 'url': photoshoot_image})
+        if additional_image:
+            images_list.append({'type': 'additional', 'url': additional_image})
+        
+        product.images = json.dumps(images_list) if images_list else None
+        
         db.session.commit()
         flash('Product updated successfully!', category='success')
         return redirect(url_for('admin.products'))
     
+    # Parse existing images for editing
+    product_images = []
+    if product.images:
+        try:
+            product_images = json.loads(product.images)
+        except:
+            product_images = []
+    
     categories = Category.query.all()
-    return render_template('admin/edit_product.html', product=product, categories=categories, user=current_user)
+    return render_template('admin/edit_product.html', product=product, categories=categories, product_images=product_images, user=current_user)
 
 @admin.route('/products/delete/<int:product_id>')
 @admin_required
@@ -118,18 +185,26 @@ def delete_product(product_id):
 @admin.route('/categories')
 @admin_required
 def categories():
-    categories = Category.query.all()
-    return render_template('admin/categories.html', categories=categories, user=current_user)
+    all_categories = Category.query.all()
+    # Separate parent and child categories
+    parent_categories = [c for c in all_categories if c.parent_id is None]
+    child_categories = [c for c in all_categories if c.parent_id is not None]
+    return render_template('admin/categories.html', 
+                         categories=all_categories,
+                         parent_categories=parent_categories,
+                         child_categories=child_categories,
+                         user=current_user)
 
 @admin.route('/categories/add', methods=['POST'])
 @admin_required
 def add_category():
     name = request.form.get('name')
-    slug = request.form.get('slug') or name.lower().replace(' ', '-')
+    slug = request.form.get('slug') or name.lower().replace(' ', '-').replace('/', '-')
     description = request.form.get('description')
     image_url = request.form.get('image_url')
+    parent_id = request.form.get('parent_id', type=int)
     
-    category = Category(name=name, slug=slug, description=description, image_url=image_url)
+    category = Category(name=name, slug=slug, description=description, image_url=image_url, parent_id=parent_id if parent_id else None)
     db.session.add(category)
     db.session.commit()
     flash('Category added successfully!', category='success')

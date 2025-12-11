@@ -1,3 +1,4 @@
+-- Active: 1753126369512@@127.0.0.1@3306
 # STAT GLOBAL - E-Commerce Platform
 
 A modern, full-featured e-commerce platform built with Flask, inspired by Shopify functionality with an earth-tone design aesthetic similar to Zara and H&M.

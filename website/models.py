@@ -15,6 +15,7 @@ class User(db.Model, UserMixin):
     # Relationships
     cart_items = relationship('CartItem', back_populates='user', cascade='all, delete-orphan')
     orders = relationship('Order', back_populates='user', cascade='all, delete-orphan')
+    wishlist_items = relationship('WishlistItem', back_populates='user', cascade='all, delete-orphan')
 
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -22,8 +23,11 @@ class Category(db.Model):
     slug = db.Column(db.String(100), unique=True, nullable=False)
     description = db.Column(db.Text)
     image_url = db.Column(db.String(500))
+    parent_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=True)  # For hierarchical categories
     
+    # Relationships
     products = relationship('Product', back_populates='category', cascade='all, delete-orphan')
+    parent = relationship('Category', remote_side=[id], backref='children')
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -34,18 +38,27 @@ class Product(db.Model):
     compare_at_price = db.Column(db.Float)  # Original price for sale items
     sku = db.Column(db.String(100), unique=True)
     inventory = db.Column(db.Integer, default=0)
-    image_url = db.Column(db.String(500))
-    images = db.Column(db.Text)  # JSON string of multiple images
+    image_url = db.Column(db.String(500))  # Main/primary image
+    images = db.Column(db.Text)  # JSON string of multiple images (on body, on ground, photoshoot)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
     is_featured = db.Column(db.Boolean, default=False)
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
     date_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Additional product details
+    shipping_details = db.Column(db.Text)  # Shipping information
+    size_chart = db.Column(db.Text)  # Size chart information (can be JSON or text)
+    colorway = db.Column(db.String(200))  # Color options/variations
+    model_details = db.Column(db.Text)  # Model information (fit, measurements, etc.)
+    fabric_type = db.Column(db.String(200))  # Fabric/material information
+    product_details = db.Column(db.Text)  # Additional product details
+    
     # Relationships
     category = relationship('Category', back_populates='products')
     cart_items = relationship('CartItem', back_populates='product', cascade='all, delete-orphan')
     order_items = relationship('OrderItem', back_populates='product', cascade='all, delete-orphan')
+    wishlist_items = relationship('WishlistItem', back_populates='product', cascade='all, delete-orphan')
     
     # Variants (size, color, etc.)
     variants = relationship('ProductVariant', back_populates='product', cascade='all, delete-orphan')
@@ -100,6 +113,18 @@ class OrderItem(db.Model):
     order = relationship('Order', back_populates='items')
     product = relationship('Product', back_populates='order_items')
     variant = relationship('ProductVariant')
+
+class WishlistItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    date_added = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = relationship('User', back_populates='wishlist_items')
+    product = relationship('Product', back_populates='wishlist_items')
+    
+    # Ensure a user can't add the same product to wishlist twice
+    __table_args__ = (db.UniqueConstraint('user_id', 'product_id', name='unique_user_product_wishlist'),)
 
 class Waitlist(db.Model):
     id = db.Column(db.Integer, primary_key=True)

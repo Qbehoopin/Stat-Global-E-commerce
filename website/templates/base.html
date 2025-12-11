@@ -20,6 +20,7 @@
                 <li><a href="#contact">Contact</a></li>
                 {% if user.is_authenticated %}
                     <li><a href="{{ url_for('views.cart') }}">Cart</a></li>
+                    <li><a href="{{ url_for('views.wishlist') }}">Wishlist</a></li>
                     <li><a href="{{ url_for('views.orders') }}">Orders</a></li>
                     {% if user.is_admin %}
                         <li><a href="{{ url_for('admin.dashboard') }}">Admin</a></li>

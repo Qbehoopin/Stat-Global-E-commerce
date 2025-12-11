@@ -7,9 +7,22 @@
     <div class="product-detail-container">
         <div class="product-images">
             {% if product.image_url %}
-                <img src="{{ product.image_url }}" alt="{{ product.name }}" class="main-product-image">
+                <img src="{{ product.image_url }}" alt="{{ product.name }}" class="main-product-image" id="main-product-image">
             {% else %}
                 <div class="product-placeholder large"></div>
+            {% endif %}
+            
+            {% if product_images %}
+                {% if product_images %}
+                <div class="product-image-gallery" style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                    {% for img in product_images %}
+                    <div class="gallery-thumbnail" style="cursor: pointer; border: 2px solid transparent; padding: 2px;">
+                        <img src="{{ img.url }}" alt="{{ img.type }}" style="width: 80px; height: 80px; object-fit: cover;" onclick="changeMainImage('{{ img.url }}')">
+                        <small style="display: block; text-align: center; font-size: 10px; margin-top: 2px;">{{ img.type.replace('_', ' ').title() }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
             {% endif %}
         </div>
 
@@ -24,6 +37,12 @@
                 {% endif %}
             </div>
 
+            {% if product.colorway %}
+            <div class="product-colorway">
+                <p><strong>Colorway:</strong> {{ product.colorway }}</p>
+            </div>
+            {% endif %}
+
             {% if product.description %}
             <div class="product-description">
                 <p>{{ product.description }}</p>
@@ -33,6 +52,9 @@
             <div class="product-meta">
                 {% if product.sku %}
                 <p><strong>SKU:</strong> {{ product.sku }}</p>
+                {% endif %}
+                {% if product.fabric_type %}
+                <p><strong>Fabric:</strong> {{ product.fabric_type }}</p>
                 {% endif %}
                 <p><strong>Availability:</strong> 
                     {% if product.inventory > 0 %}
@@ -44,24 +66,65 @@
             </div>
 
             {% if user.is_authenticated %}
-            <form method="POST" action="{{ url_for('views.add_to_cart') }}" class="add-to-cart-form">
-                <input type="hidden" name="product_id" value="{{ product.id }}">
-                <div class="quantity-selector">
-                    <label for="quantity">Quantity:</label>
-                    <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ product.inventory if product.inventory > 0 else 1 }}">
-                </div>
-                <button type="submit" class="btn btn-primary btn-large" {% if product.inventory == 0 %}disabled{% endif %}>
-                    {% if product.inventory > 0 %}Add to Cart{% else %}Out of Stock{% endif %}
-                </button>
-            </form>
+            <div class="product-actions" style="display: flex; gap: 10px; margin-top: 20px;">
+                <form method="POST" action="{{ url_for('views.add_to_cart') }}" class="add-to-cart-form" style="flex: 1;">
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <div class="quantity-selector" style="margin-bottom: 10px;">
+                        <label for="quantity">Quantity:</label>
+                        <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ product.inventory if product.inventory > 0 else 1 }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-large" {% if product.inventory == 0 %}disabled{% endif %} style="width: 100%;">
+                        {% if product.inventory > 0 %}Add to Cart{% else %}Out of Stock{% endif %}
+                    </button>
+                </form>
+                {% if in_wishlist %}
+                    <a href="{{ url_for('views.wishlist') }}" class="btn btn-secondary" style="padding: 10px 20px;" title="View Wishlist">❤️ In Wishlist</a>
+                {% else %}
+                    <form method="POST" action="{{ url_for('views.add_to_wishlist') }}" style="display: inline;">
+                        <input type="hidden" name="product_id" value="{{ product.id }}">
+                        <button type="submit" class="btn btn-secondary" style="padding: 10px 20px;" title="Add to Wishlist">❤️</button>
+                    </form>
+                {% endif %}
+            </div>
             {% else %}
             <p><a href="{{ url_for('auth.login') }}">Login</a> to add items to cart.</p>
             {% endif %}
         </div>
     </div>
 
+    <!-- Product Details Tabs/Sections -->
+    <div class="product-details-sections" style="margin-top: 40px; border-top: 1px solid #ddd; padding-top: 30px;">
+        {% if product.product_details %}
+        <div class="detail-section" style="margin-bottom: 30px;">
+            <h3>Product Details</h3>
+            <div style="white-space: pre-line;">{{ product.product_details }}</div>
+        </div>
+        {% endif %}
+
+        {% if product.model_details %}
+        <div class="detail-section" style="margin-bottom: 30px;">
+            <h3>Model Details & Fit</h3>
+            <div style="white-space: pre-line;">{{ product.model_details }}</div>
+        </div>
+        {% endif %}
+
+        {% if product.size_chart %}
+        <div class="detail-section" style="margin-bottom: 30px;">
+            <h3>Size Chart</h3>
+            <div style="white-space: pre-line;">{{ product.size_chart }}</div>
+        </div>
+        {% endif %}
+
+        {% if product.shipping_details %}
+        <div class="detail-section" style="margin-bottom: 30px;">
+            <h3>Shipping Information</h3>
+            <div style="white-space: pre-line;">{{ product.shipping_details }}</div>
+        </div>
+        {% endif %}
+    </div>
+
     {% if related_products %}
-    <section class="related-products">
+    <section class="related-products" style="margin-top: 50px; border-top: 1px solid #ddd; padding-top: 30px;">
         <h2>You May Also Like</h2>
         <div class="products-grid">
             {% for related in related_products %}
@@ -85,5 +148,14 @@
     </section>
     {% endif %}
 </div>
+
+<script>
+function changeMainImage(url) {
+    const mainImage = document.getElementById('main-product-image');
+    if (mainImage) {
+        mainImage.src = url;
+    }
+}
+</script>
 {% endblock %}
 

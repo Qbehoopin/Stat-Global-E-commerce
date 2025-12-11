@@ -1,0 +1,3 @@
+where we left off on 12/11/25 with chat
+for the app i want those who click the sign up button to make sure the have entered the access code to be able to see the page and sign up to create an account.
+also add rate liming for api endpoints, implementing ip-based access restrictions for the landing page, and add session based access control expires browers is closed. also create drop tabs for the product category for mensware, womensware, and global babies/kids and when they are clicked then it shows the different things for example the shirts, hoodies, etc. 

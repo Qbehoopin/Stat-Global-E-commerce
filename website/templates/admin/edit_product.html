@@ -59,8 +59,88 @@
         </div>
 
         <div class="form-group">
-            <label for="image_url">Image URL</label>
+            <label for="image_url">Main Image URL *</label>
             <input type="url" id="image_url" name="image_url" value="{{ product.image_url or '' }}" placeholder="https://example.com/image.jpg">
+            <small>Primary product image</small>
+        </div>
+
+        <div class="form-section">
+            <h3>Additional Product Images</h3>
+            {% set on_body_img = product_images | selectattr('type', 'equalto', 'on_body') | list | first %}
+            {% set on_ground_img = product_images | selectattr('type', 'equalto', 'on_ground') | list | first %}
+            {% set photoshoot_img = product_images | selectattr('type', 'equalto', 'photoshoot') | list | first %}
+            {% set additional_img = product_images | selectattr('type', 'equalto', 'additional') | list | first %}
+            
+            <div class="form-group">
+                <label for="on_body_image">On Body Image URL</label>
+                <input type="url" id="on_body_image" name="on_body_image" value="{{ on_body_img.url if on_body_img else '' }}" placeholder="https://example.com/on-body.jpg">
+                {% if on_body_img %}
+                <div style="margin-top: 5px;">
+                    <img src="{{ on_body_img.url }}" alt="On Body" style="max-width: 200px; height: auto; border: 1px solid #ddd; padding: 5px;">
+                </div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="on_ground_image">On Ground Image URL</label>
+                <input type="url" id="on_ground_image" name="on_ground_image" value="{{ on_ground_img.url if on_ground_img else '' }}" placeholder="https://example.com/on-ground.jpg">
+                {% if on_ground_img %}
+                <div style="margin-top: 5px;">
+                    <img src="{{ on_ground_img.url }}" alt="On Ground" style="max-width: 200px; height: auto; border: 1px solid #ddd; padding: 5px;">
+                </div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="photoshoot_image">Photoshoot Image URL</label>
+                <input type="url" id="photoshoot_image" name="photoshoot_image" value="{{ photoshoot_img.url if photoshoot_img else '' }}" placeholder="https://example.com/photoshoot.jpg">
+                {% if photoshoot_img %}
+                <div style="margin-top: 5px;">
+                    <img src="{{ photoshoot_img.url }}" alt="Photoshoot" style="max-width: 200px; height: auto; border: 1px solid #ddd; padding: 5px;">
+                </div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="additional_image">Additional Image URL</label>
+                <input type="url" id="additional_image" name="additional_image" value="{{ additional_img.url if additional_img else '' }}" placeholder="https://example.com/additional.jpg">
+                {% if additional_img %}
+                <div style="margin-top: 5px;">
+                    <img src="{{ additional_img.url }}" alt="Additional" style="max-width: 200px; height: auto; border: 1px solid #ddd; padding: 5px;">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Product Details</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="colorway">Colorway</label>
+                    <input type="text" id="colorway" name="colorway" value="{{ product.colorway or '' }}" placeholder="e.g., Black, White, Navy">
+                </div>
+                <div class="form-group">
+                    <label for="fabric_type">Fabric Type</label>
+                    <input type="text" id="fabric_type" name="fabric_type" value="{{ product.fabric_type or '' }}" placeholder="e.g., 100% Cotton, Polyester Blend">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="product_details">Product Details</label>
+                <textarea id="product_details" name="product_details" rows="4" placeholder="Additional product information, features, care instructions, etc.">{{ product.product_details or '' }}</textarea>
+            </div>
+            <div class="form-group">
+                <label for="model_details">Model Details</label>
+                <textarea id="model_details" name="model_details" rows="4" placeholder="Model measurements, fit information, sizing notes, etc.">{{ product.model_details or '' }}</textarea>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Shipping & Sizing</h3>
+            <div class="form-group">
+                <label for="shipping_details">Shipping Details</label>
+                <textarea id="shipping_details" name="shipping_details" rows="4" placeholder="Shipping information, delivery times, shipping costs, etc.">{{ product.shipping_details or '' }}</textarea>
+            </div>
+            <div class="form-group">
+                <label for="size_chart">Size Chart</label>
+                <textarea id="size_chart" name="size_chart" rows="6" placeholder="Size chart information. You can include measurements, fit guide, or link to size chart.">{{ product.size_chart or '' }}</textarea>
+            </div>
         </div>
 
         <div class="form-group">
