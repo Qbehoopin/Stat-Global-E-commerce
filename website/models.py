@@ -19,8 +19,8 @@ class User(db.Model, UserMixin):
 
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), unique=True, nullable=False)
-    slug = db.Column(db.String(100), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)  # Not unique - same name can exist under different parents
+    slug = db.Column(db.String(100), unique=True, nullable=False)  # Slug must be unique
     description = db.Column(db.Text)
     image_url = db.Column(db.String(500))
     parent_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=True)  # For hierarchical categories

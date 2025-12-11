@@ -1,12 +1,19 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, session
 from flask_login import login_required, current_user
-from . import db
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from . import db, limiter
 from .models import Product, Category, CartItem, Order, OrderItem, ProductVariant, Waitlist, WishlistItem
 from datetime import datetime
 import uuid
 import json
 
 views = Blueprint('views', __name__)
+
+# IP-based access tracking for landing page
+landing_page_attempts = {}  # Store IP addresses and attempt counts
+MAX_LANDING_ATTEMPTS = 5  # Maximum attempts per IP
+LANDING_BLOCK_DURATION = 3600  # Block duration in seconds (1 hour)
 
 def check_access():
     """Check if user has access to the site"""
@@ -22,28 +29,62 @@ def home():
         return redirect(url_for('views.landing'))
     
     featured_products = Product.query.filter_by(is_featured=True, is_active=True).limit(8).all()
-    categories = Category.query.all()
+    # Get only parent categories (main categories)
+    main_categories = Category.query.filter_by(parent_id=None).all()
     return render_template('home.html', 
                          featured_products=featured_products, 
-                         categories=categories,
+                         categories=main_categories,
                          user=current_user)
 
 @views.route('/landing', methods=['GET', 'POST'])
 def landing():
     from . import LANDING_ACCESS_CODE
+    from datetime import datetime, timedelta
+    
+    # Get client IP address
+    client_ip = get_remote_address()
+    
+    # Check IP-based restrictions
+    if client_ip in landing_page_attempts:
+        attempts_data = landing_page_attempts[client_ip]
+        if attempts_data['blocked_until'] and datetime.now() < attempts_data['blocked_until']:
+            remaining_time = (attempts_data['blocked_until'] - datetime.now()).seconds // 60
+            flash(f'Too many failed attempts. Please try again in {remaining_time} minutes.', category='error')
+            return render_template('landing.html', user=current_user, blocked=True)
+        elif attempts_data['blocked_until'] and datetime.now() >= attempts_data['blocked_until']:
+            # Unblock after duration
+            landing_page_attempts[client_ip] = {'attempts': 0, 'blocked_until': None}
     
     if request.method == 'POST':
-        access_code = request.form.get('access_code', '').strip()
+        access_code = request.form.get('access_code', '').strip().upper().replace(' ', '')
+        correct_code = LANDING_ACCESS_CODE.upper().replace(' ', '')
         
-        if access_code == LANDING_ACCESS_CODE:
+        if access_code == correct_code:
             session['has_landing_access'] = True
+            session.permanent = False  # Session expires when browser closes
+            # Reset attempts on successful access
+            if client_ip in landing_page_attempts:
+                landing_page_attempts[client_ip] = {'attempts': 0, 'blocked_until': None}
+            flash('Access granted! Welcome to STAT GLOBAL.', category='success')
             return redirect(url_for('views.home'))
         else:
-            flash('Invalid access code. Access denied.', category='error')
+            # Track failed attempts
+            if client_ip not in landing_page_attempts:
+                landing_page_attempts[client_ip] = {'attempts': 0, 'blocked_until': None}
+            
+            landing_page_attempts[client_ip]['attempts'] += 1
+            
+            if landing_page_attempts[client_ip]['attempts'] >= MAX_LANDING_ATTEMPTS:
+                landing_page_attempts[client_ip]['blocked_until'] = datetime.now() + timedelta(seconds=LANDING_BLOCK_DURATION)
+                flash(f'Too many failed attempts. Access blocked for 1 hour.', category='error')
+            else:
+                remaining = MAX_LANDING_ATTEMPTS - landing_page_attempts[client_ip]['attempts']
+                flash(f'Invalid access code. {remaining} attempt(s) remaining.', category='error')
     
     return render_template('landing.html', user=current_user)
 
 @views.route('/join-waitlist', methods=['POST'])
+@limiter.limit("5 per minute")  # Rate limit: 5 requests per minute per IP
 def join_waitlist():
     try:
         name = request.form.get('name', '').strip()
@@ -76,14 +117,12 @@ def join_waitlist():
 @views.route('/logout-access')
 def logout_access():
     session.pop('has_landing_access', None)
+    session.permanent = False  # Ensure session expires when browser closes
+    # Also log out user if they're logged in
+    if current_user.is_authenticated:
+        from flask_login import logout_user
+        logout_user()
     return redirect(url_for('views.landing'))
-
-def check_access():
-    """Check if user has access to the site"""
-    has_access = session.get('has_landing_access', False)
-    if current_user.is_authenticated and current_user.is_admin:
-        return True
-    return has_access
 
 @views.route('/products')
 def products():
@@ -113,11 +152,12 @@ def products():
         query = query.order_by(Product.date_created.desc())
     
     products = query.all()
-    categories = Category.query.all()
+    # Get parent categories with their children
+    main_categories = Category.query.filter_by(parent_id=None).all()
     
     return render_template('products.html', 
                          products=products, 
-                         categories=categories,
+                         categories=main_categories,
                          current_category=category_id,
                          search=search,
                          sort=sort,
@@ -164,6 +204,7 @@ def cart():
 
 @views.route('/add-to-cart', methods=['POST'])
 @login_required
+@limiter.limit("20 per minute")  # Rate limit: 20 add-to-cart requests per minute
 def add_to_cart():
     product_id = request.form.get('product_id')
     quantity = int(request.form.get('quantity', 1))
@@ -309,6 +350,7 @@ def wishlist():
 
 @views.route('/add-to-wishlist', methods=['POST'])
 @login_required
+@limiter.limit("10 per minute")  # Rate limit: 10 wishlist additions per minute
 def add_to_wishlist():
     if not check_access():
         flash('You need access to add items to wishlist.', category='error')

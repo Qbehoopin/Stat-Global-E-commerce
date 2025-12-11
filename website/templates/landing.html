@@ -10,7 +10,8 @@
     <div class="landing-container">
         <div class="landing-content">
             <h1 class="headline">ACCESS RESTRICTED GLOBAL ONES ONLY.</h1>
-            <p class="subheadline">STAT GLOBAL private drop. Reserved for Gloabal Ones only.</p>
+            <p class="subheadline">STAT GLOBAL private drop. Reserved for Global Ones only.</p>
+            <p class="access-info">Enter the access code to join the community, sign up, and shop.</p>
             
             <form method="POST" action="{{ url_for('views.landing') }}" class="access-form" id="accessForm">
                 <div class="password-input-wrapper">
@@ -26,9 +27,17 @@
                     >
                     <div class="input-underline"></div>
                 </div>
-                <p class="access-hint">Enter your access code. Unauthorized users will be denied.</p>
+                <p class="access-hint">Enter your access code to sign up, shop, and join the community.</p>
                 <button type="submit" class="access-btn">ENTER</button>
             </form>
+            
+            <div class="post-access-links" style="margin-top: 30px; text-align: center; display: none;" id="postAccessLinks">
+                <p style="color: #fff; margin-bottom: 15px;">Access granted! What would you like to do?</p>
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                    <a href="{{ url_for('auth.sign_up') }}" class="access-btn" style="text-decoration: none; display: inline-block;">Sign Up</a>
+                    <a href="{{ url_for('views.home') }}" class="access-btn" style="text-decoration: none; display: inline-block;">Browse Shop</a>
+                </div>
+            </div>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}

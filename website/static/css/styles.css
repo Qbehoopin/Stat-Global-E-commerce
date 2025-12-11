@@ -188,6 +188,120 @@ img {
   width: 100%;
 }
 
+/* Dropdown Menu Styles */
+.nav-menu .dropdown {
+  position: relative;
+}
+
+.nav-menu .dropdown > a {
+  cursor: pointer;
+}
+
+.nav-menu .dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: rgba(15, 26, 44, 0.98);
+  border: 2px solid var(--solar-gold);
+  border-top: none;
+  min-width: 200px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  z-index: 1000;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+}
+
+.nav-menu .dropdown:hover .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.nav-menu .dropdown-menu li {
+  border-bottom: 1px solid rgba(242, 199, 68, 0.1);
+}
+
+.nav-menu .dropdown-menu li:last-child {
+  border-bottom: none;
+}
+
+.nav-menu .dropdown-menu a {
+  display: block;
+  padding: 15px 20px;
+  color: var(--text-light);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  transition: all 0.3s ease;
+}
+
+.nav-menu .dropdown-menu a:hover {
+  background: rgba(242, 199, 68, 0.15);
+  color: var(--solar-gold);
+  padding-left: 25px;
+}
+
+/* Dropdown Submenu (for categories with children) */
+.nav-menu .dropdown-submenu {
+  position: relative;
+}
+
+.nav-menu .dropdown-submenu > a::after {
+  content: '▶';
+  float: right;
+  margin-left: 10px;
+  font-size: 10px;
+  transition: transform 0.3s ease;
+}
+
+.nav-menu .dropdown-submenu:hover > a::after {
+  transform: translateX(3px);
+}
+
+.nav-menu .dropdown-submenu-content {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  background: rgba(15, 26, 44, 0.98);
+  border: 2px solid var(--solar-gold);
+  border-left: none;
+  min-width: 180px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-10px);
+  transition: all 0.3s ease;
+  z-index: 1001;
+  box-shadow: 4px 0 25px rgba(0, 0, 0, 0.7);
+}
+
+.nav-menu .dropdown-submenu:hover .dropdown-submenu-content {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+.nav-menu .dropdown-submenu-content li {
+  border-bottom: 1px solid rgba(242, 199, 68, 0.1);
+}
+
+.nav-menu .dropdown-submenu-content li:last-child {
+  border-bottom: none;
+}
+
+.nav-menu .dropdown-submenu-content a {
+  padding: 12px 18px;
+  font-size: 13px;
+}
+
 /* Flash Messages - Comic Style */
 .flash-messages {
   max-width: 1400px;
@@ -1199,6 +1313,42 @@ img {
   color: var(--solar-gold);
   text-shadow: 0 0 8px rgba(242, 199, 68, 0.6);
   padding-left: 10px;
+}
+
+.category-parent {
+  margin-bottom: 20px;
+}
+
+.category-parent > a {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--solar-gold);
+}
+
+.category-sublist {
+  list-style: none;
+  margin-top: 10px;
+  margin-left: 15px;
+  padding-left: 15px;
+  border-left: 2px solid rgba(242, 199, 68, 0.3);
+}
+
+.category-sublist li {
+  margin-bottom: 8px;
+}
+
+.category-sublist a {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-light);
+  opacity: 0.8;
+}
+
+.category-sublist a:hover,
+.category-sublist a.active {
+  opacity: 1;
+  color: var(--solar-gold);
+  padding-left: 15px;
 }
 
 .products-main {

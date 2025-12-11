@@ -6,6 +6,19 @@
 <div class="auth-page">
     <div class="auth-container">
         <h1>Create Account</h1>
+        
+        {% if require_access_code %}
+        <div class="access-code-section">
+            <p>Please enter the access code to create an account:</p>
+            <form method="POST" class="auth-form">
+                <div class="form-group">
+                    <label for="access_code">Access Code</label>
+                    <input type="text" id="access_code" name="access_code" required autofocus>
+                </div>
+                <button type="submit" class="btn btn-primary btn-large btn-block">Verify Access Code</button>
+            </form>
+        </div>
+        {% else %}
         <form method="POST" class="auth-form">
             <div class="form-group">
                 <label for="firstName">First Name</label>
@@ -29,6 +42,8 @@
             </div>
             <button type="submit" class="btn btn-primary btn-large btn-block">Sign Up</button>
         </form>
+        {% endif %}
+        
         <p class="auth-link">Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
     </div>
 </div>

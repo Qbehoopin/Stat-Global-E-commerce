@@ -26,7 +26,20 @@
             <ul class="category-list">
                 <li><a href="{{ url_for('views.products') }}" class="{% if not current_category %}active{% endif %}">All Products</a></li>
                 {% for category in categories %}
-                <li><a href="{{ url_for('views.products', category=category.id) }}" class="{% if current_category == category.id %}active{% endif %}">{{ category.name }}</a></li>
+                    {% if category.name != 'Exclusive Art' %}
+                    <li class="category-parent">
+                        <a href="{{ url_for('views.products', category=category.id) }}" class="{% if current_category == category.id %}active{% endif %}">{{ category.name }}</a>
+                        {% if category.children %}
+                        <ul class="category-sublist">
+                            {% for subcat in category.children %}
+                            <li><a href="{{ url_for('views.products', category=subcat.id) }}" class="{% if current_category == subcat.id %}active{% endif %}">{{ subcat.name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </li>
+                    {% else %}
+                    <li><a href="{{ url_for('views.products', category=category.id) }}" class="{% if current_category == category.id %}active{% endif %}">{{ category.name }}</a></li>
+                    {% endif %}
                 {% endfor %}
             </ul>
         </aside>

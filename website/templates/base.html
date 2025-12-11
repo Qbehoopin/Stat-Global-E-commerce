@@ -15,7 +15,27 @@
             </a>
             <ul class="nav-menu">
                 <li><a href="{{ url_for('views.home') }}">Home</a></li>
-                <li><a href="{{ url_for('views.products') }}">Shop</a></li>
+                <li class="dropdown">
+                    <a href="{{ url_for('views.products') }}">Shop</a>
+                    <ul class="dropdown-menu">
+                        {% if nav_categories %}
+                            {% for category in nav_categories %}
+                                {% if category.name != 'Exclusive Art' %}
+                                <li class="dropdown-submenu">
+                                    <a href="{{ url_for('views.products', category=category.id) }}">{{ category.name }}</a>
+                                    <ul class="dropdown-submenu-content">
+                                        {% for subcat in category.children %}
+                                        <li><a href="{{ url_for('views.products', category=subcat.id) }}">{{ subcat.name }}</a></li>
+                                        {% endfor %}
+                                    </ul>
+                                </li>
+                                {% else %}
+                                <li><a href="{{ url_for('views.products', category=category.id) }}">{{ category.name }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </ul>
+                </li>
                 <li><a href="#about">About</a></li>
                 <li><a href="#contact">Contact</a></li>
                 {% if user.is_authenticated %}

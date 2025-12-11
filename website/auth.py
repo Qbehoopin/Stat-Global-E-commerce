@@ -1,13 +1,22 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, login_required, logout_user, current_user
-from . import db
+from . import db, limiter
 from .models import User
 
 auth = Blueprint('auth', __name__)
 
 @auth.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")  # Rate limit: 10 login attempts per minute per IP
 def login():
+    from . import LANDING_ACCESS_CODE
+    
+    # Require access code before allowing login (unless admin)
+    has_access = session.get('has_landing_access', False)
+    if not has_access and (not current_user.is_authenticated or not current_user.is_admin):
+        flash('Please enter the access code on the landing page first.', category='error')
+        return redirect(url_for('views.landing'))
+    
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
@@ -32,7 +41,30 @@ def logout():
     return redirect(url_for('views.home'))
 
 @auth.route('/sign-up', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")  # Rate limit: 5 sign-up attempts per minute per IP
 def sign_up():
+    from . import LANDING_ACCESS_CODE
+    
+    # Check if user has access (either via session or admin)
+    has_access = session.get('has_landing_access', False)
+    if not has_access and (not current_user.is_authenticated or not current_user.is_admin):
+        # If no access, require access code
+        if request.method == 'POST':
+            access_code = request.form.get('access_code', '').strip().upper().replace(' ', '')
+            correct_code = LANDING_ACCESS_CODE.upper().replace(' ', '')
+            if access_code == correct_code:
+                session['has_landing_access'] = True
+                session.permanent = False  # Session expires when browser closes
+                flash('Access granted! Please complete your registration.', category='success')
+                # Redirect back to sign-up page to show the form
+                return redirect(url_for('auth.sign_up'))
+            else:
+                flash('Invalid access code. Access denied.', category='error')
+        
+        # Show access code form
+        return render_template('auth/signup.html', require_access_code=True, user=current_user)
+    
+    # User has access, show sign-up form
     if request.method == 'POST':
         email = request.form.get('email')
         first_name = request.form.get('firstName')
@@ -64,5 +96,5 @@ def sign_up():
             flash('Account created!', category='success')
             return redirect(url_for('views.home'))
     
-    return render_template('auth/signup.html', user=current_user)
+    return render_template('auth/signup.html', require_access_code=False, user=current_user)
 

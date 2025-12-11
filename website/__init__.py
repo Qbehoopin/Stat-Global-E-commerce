@@ -1,9 +1,12 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash
 
 db = SQLAlchemy()
+limiter = Limiter(key_func=get_remote_address)
 DB_NAME = "stat_global.db"
 
 # Default admin credentials
@@ -21,12 +24,14 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['UPLOAD_FOLDER'] = 'website/static/images/products'
+    app.config['SESSION_PERMANENT'] = False  # Sessions expire when browser closes
     
     db.init_app(app)
+    limiter.init_app(app)
     
     login_manager = LoginManager()
-    login_manager.login_view = 'auth.login'
-    login_manager.login_message = 'Please log in to access this page.'
+    login_manager.login_view = 'views.landing'  # Redirect to landing page if not authenticated
+    login_manager.login_message = 'Please enter the access code to access this page.'
     login_manager.login_message_category = 'info'
     login_manager.init_app(app)
     
@@ -50,6 +55,15 @@ def create_app():
     app.register_blueprint(auth, url_prefix='/')
     app.register_blueprint(admin, url_prefix='/admin')
     
+    # Context processor to make categories available globally
+    @app.context_processor
+    def inject_categories():
+        try:
+            main_categories = Category.query.filter_by(parent_id=None).order_by(Category.name).all()
+            return dict(nav_categories=main_categories)
+        except:
+            return dict(nav_categories=[])
+    
     # Create database tables and default admin account
     with app.app_context():
         from .models import Category
@@ -72,13 +86,15 @@ def create_app():
         
         # Create default categories structure
         try:
-            categories_structure = {
-                'Mensware': ['Shirts', 'Hoodies', 'Hats', 'Artwork', 'Exclusive Catalog'],
-                'Womensware': ['Shirts', 'Hoodies', 'Hats', 'Artwork', 'Exclusive Catalog'],
-                'Global Babies/Kids': ['Shirts', 'Hoodies', 'Hats', 'Artwork', 'Exclusive Catalog']
+            # Main categories with subcategories (clothing items)
+            categories_with_subcats = {
+                'Mensware': ['Shirts', 'Hoodies', 'Hats'],
+                'Womensware': ['Shirts', 'Hoodies', 'Hats'],
+                'Global Babies/Kids': ['Shirts', 'Hoodies', 'Hats']
             }
             
-            for parent_name, subcategories in categories_structure.items():
+            # Create categories with subcategories
+            for parent_name, subcategories in categories_with_subcats.items():
                 parent_category = Category.query.filter_by(name=parent_name).first()
                 if not parent_category:
                     parent_slug = parent_name.lower().replace(' ', '-').replace('/', '-')
@@ -96,12 +112,22 @@ def create_app():
                     existing_subcat = Category.query.filter_by(slug=subcat_slug).first()
                     if not existing_subcat:
                         subcategory = Category(
-                            name=f"{parent_name} - {subcat_name}",
+                            name=subcat_name,  # Just the subcategory name, not prefixed
                             slug=subcat_slug,
                             description=f"{subcat_name} in {parent_name}",
                             parent_id=parent_category.id
                         )
                         db.session.add(subcategory)
+            
+            # Create Exclusive Art category (no subcategories)
+            exclusive_art = Category.query.filter_by(name='Exclusive Art').first()
+            if not exclusive_art:
+                exclusive_art = Category(
+                    name='Exclusive Art',
+                    slug='exclusive-art',
+                    description='Exclusive artwork collection'
+                )
+                db.session.add(exclusive_art)
             
             db.session.commit()
             print("OK: Default categories structure created")
